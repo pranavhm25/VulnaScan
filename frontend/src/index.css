@@ -1,0 +1,312 @@
+@import "tailwindcss";
+
+/* ── Design Tokens (Tailwind v4 CSS-first) ── */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  /* Neon accent colors */
+  --color-neon-cyan: #00f0ff;
+  --color-neon-green: #39ff14;
+  --color-neon-pink: #ff006e;
+  --color-neon-purple: #b026ff;
+  --color-neon-orange: #ff6b35;
+
+  /* Surface palette */
+  --color-surface-950: #020617;
+  --color-surface-900: #0f172a;
+  --color-surface-800: #1e293b;
+  --color-surface-700: #334155;
+  --color-surface-600: #475569;
+
+  /* Text */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+
+  /* Severity */
+  --color-severity-high: #ff4757;
+  --color-severity-medium: #ffa502;
+  --color-severity-low: #2ed573;
+}
+
+/* ── Global Styles ── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-surface-700) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--color-surface-700);
+  border-radius: 3px;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface-950);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+}
+
+/* ── Animated Background ── */
+.bg-grid {
+  background-image:
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+/* ── Glassmorphism ── */
+.glass {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.5);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 240, 255, 0.06);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  border-color: rgba(0, 240, 255, 0.15);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.05);
+}
+
+/* ── Neon Glow Effects ── */
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.3), 0 0 40px rgba(0, 240, 255, 0.1);
+}
+
+.glow-text-cyan {
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 30px rgba(0, 240, 255, 0.2);
+}
+
+.glow-pink {
+  box-shadow: 0 0 15px rgba(255, 0, 110, 0.3), 0 0 40px rgba(255, 0, 110, 0.1);
+}
+
+/* ── Animated Gradient Border ── */
+.gradient-border {
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    var(--color-neon-cyan),
+    var(--color-neon-purple),
+    var(--color-neon-pink),
+    var(--color-neon-cyan)
+  );
+  background-size: 300% 300%;
+  animation: gradient-shift 6s ease infinite;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  pointer-events: none;
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* ── Scan Button ── */
+.btn-scan {
+  background: linear-gradient(135deg, var(--color-neon-cyan), #0891b2);
+  color: var(--color-surface-950);
+  font-weight: 700;
+  padding: 0.75rem 2rem;
+  border-radius: 0.75rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-scan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.btn-scan:hover::after {
+  transform: translateX(100%);
+}
+
+.btn-scan:hover {
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.4), 0 0 60px rgba(0, 240, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.btn-scan:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── Severity Badges ── */
+.badge-high {
+  background: rgba(255, 71, 87, 0.15);
+  color: var(--color-severity-high);
+  border: 1px solid rgba(255, 71, 87, 0.3);
+  text-shadow: 0 0 8px rgba(255, 71, 87, 0.4);
+}
+
+.badge-medium {
+  background: rgba(255, 165, 2, 0.15);
+  color: var(--color-severity-medium);
+  border: 1px solid rgba(255, 165, 2, 0.3);
+  text-shadow: 0 0 8px rgba(255, 165, 2, 0.4);
+}
+
+.badge-low {
+  background: rgba(46, 213, 115, 0.15);
+  color: var(--color-severity-low);
+  border: 1px solid rgba(46, 213, 115, 0.3);
+  text-shadow: 0 0 8px rgba(46, 213, 115, 0.4);
+}
+
+/* ── Scanner Badges ── */
+.badge-scanner {
+  background: rgba(176, 38, 255, 0.12);
+  color: #d4a5ff;
+  border: 1px solid rgba(176, 38, 255, 0.25);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+}
+
+/* ── Pulse Animation for Loading ── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(0, 240, 255, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.6), 0 0 40px rgba(0, 240, 255, 0.2); }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* ── Scan Progress Steps ── */
+@keyframes scan-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.step-active {
+  animation: scan-pulse 1.5s ease-in-out infinite;
+}
+
+/* ── Fade-in Animation ── */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in-up 0.4s ease-out forwards;
+}
+
+/* ── Code Block ── */
+.code-block {
+  background: rgba(2, 6, 23, 0.8);
+  border: 1px solid rgba(0, 240, 255, 0.06);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: #e2e8f0;
+}
+
+/* ── Ring Chart ── */
+.ring-chart {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  position: relative;
+}
+
+/* ── Stat Card ── */
+.stat-card {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(0, 240, 255, 0.06);
+  border-radius: 0.75rem;
+  padding: 1.25rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  border-color: rgba(0, 240, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* ── Category Tag ── */
+.category-tag {
+  background: rgba(0, 240, 255, 0.06);
+  border: 1px solid rgba(0, 240, 255, 0.1);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.category-tag:hover {
+  background: rgba(0, 240, 255, 0.12);
+  color: var(--color-neon-cyan);
+  border-color: rgba(0, 240, 255, 0.25);
+}
+
+/* ── Finding Card Expand/Collapse ── */
+.finding-details {
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+}
+
+/* ── Fix Suggestion Styling ── */
+.fix-block {
+  background: rgba(2, 6, 23, 0.8);
+  border: 1px solid rgba(46, 213, 115, 0.12);
+  border-left: 3px solid var(--color-severity-low);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  color: #a7f3d0;
+}
