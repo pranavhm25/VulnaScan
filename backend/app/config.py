@@ -7,8 +7,8 @@ class Settings(BaseSettings):
     max_repo_size_mb: int = 200
     scan_timeout_seconds: int = 180
     max_findings_to_explain: int = 25
-    tmp_repo_dir: str = "tmp_repos"
-    cache_dir: str = "cache"
+    tmp_repo_dir: str = "/tmp/vulnascan_repos"
+    cache_dir: str = "/tmp/vulnascan_cache"
     cache_ttl_seconds: int = 604800  # 7 days
 
     class Config:
