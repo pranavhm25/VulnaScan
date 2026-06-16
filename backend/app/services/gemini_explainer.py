@@ -3,10 +3,17 @@ import asyncio
 from typing import List
 
 from google import genai
+from pydantic import BaseModel
 
 from app.config import settings
 from app.models.schemas import Finding
 from app.services.cache import get_cached, set_cached
+
+
+class ExplanationResponse(BaseModel):
+    explanation: str
+    fix_suggestion: str
+
 
 SYSTEM_PROMPT = """You are a senior application security engineer reviewing code vulnerabilities.
 For each finding, provide:
@@ -14,11 +21,7 @@ For each finding, provide:
 2. Why this matters in a real-world context
 3. A concrete fix suggestion with a code snippet showing the corrected code
 
-Respond ONLY with valid JSON (no markdown fences, no preamble) in this exact shape:
-{
-  "explanation": "Plain-English explanation of the vulnerability and its real-world impact.",
-  "fix_suggestion": "Code snippet or clear step-by-step instructions to fix the issue."
-}"""
+Respond ONLY with valid JSON matching the schema."""
 
 
 def _build_prompt(finding: Finding) -> str:
@@ -57,22 +60,27 @@ async def explain_finding(client: genai.Client, finding: Finding) -> Finding:
             config={
                 "system_instruction": SYSTEM_PROMPT,
                 "temperature": 0.3,
-                "max_output_tokens": 600,
+                "max_output_tokens": 1200,
+                "response_mime_type": "application/json",
+                "response_schema": ExplanationResponse,
             },
         )
 
-        text = response.text.strip()
+        if response.parsed:
+            finding.explanation = response.parsed.explanation
+            finding.fix_suggestion = response.parsed.fix_suggestion
+        else:
+            text = response.text.strip()
+            # Strip accidental markdown fences
+            if text.startswith("```"):
+                text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+            if text.endswith("```"):
+                text = text[:-3]
+            text = text.strip()
 
-        # Strip accidental markdown fences
-        if text.startswith("```"):
-            text = text.split("\n", 1)[1] if "\n" in text else text[3:]
-        if text.endswith("```"):
-            text = text[:-3]
-        text = text.strip()
-
-        parsed = json.loads(text)
-        finding.explanation = parsed.get("explanation")
-        finding.fix_suggestion = parsed.get("fix_suggestion")
+            parsed = json.loads(text)
+            finding.explanation = parsed.get("explanation")
+            finding.fix_suggestion = parsed.get("fix_suggestion")
 
         # Cache the result
         set_cached(finding.rule_id, finding.code_snippet, finding.file_path, {
@@ -80,10 +88,6 @@ async def explain_finding(client: genai.Client, finding: Finding) -> Finding:
             "fix_suggestion": finding.fix_suggestion,
         })
 
-    except json.JSONDecodeError:
-        # LLM returned non-JSON — use raw text as explanation
-        finding.explanation = text if 'text' in dir() else "Explanation unavailable"
-        finding.fix_suggestion = None
     except Exception as e:
         finding.explanation = f"Explanation unavailable: {str(e)[:200]}"
         finding.fix_suggestion = None
@@ -116,10 +120,13 @@ async def explain_findings(findings: List[Finding]) -> List[Finding]:
         tasks = [explain_finding(client, f) for f in batch]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        for result in results:
+        for idx, result in enumerate(results):
             if isinstance(result, Exception):
                 # Create a finding with error explanation
-                explained.append(batch[len(explained) - i] if (len(explained) - i) < len(batch) else batch[0])
+                finding = batch[idx]
+                finding.explanation = f"Explanation unavailable: {str(result)[:200]}"
+                finding.fix_suggestion = None
+                explained.append(finding)
             else:
                 explained.append(result)
 

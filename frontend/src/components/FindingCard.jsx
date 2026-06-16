@@ -49,6 +49,52 @@ function CopyButton({ text }) {
   );
 }
 
+function renderFixSuggestion(fixSuggestion) {
+  if (!fixSuggestion) return null;
+
+  // Split by code blocks: ```lang\ncode\n```
+  const parts = fixSuggestion.split(/```[a-zA-Z]*\n?/);
+  if (parts.length >= 2) {
+    const description = parts[0].trim();
+    const rest = parts[1].split("```");
+    const code = rest[0].trim();
+    const footer = rest[1] ? rest[1].trim() : "";
+
+    return (
+      <div className="space-y-3">
+        {description && (
+          <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed whitespace-pre-wrap">
+            {description}
+          </p>
+        )}
+        {code && (
+          <div className="mt-2">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[var(--color-text-muted)] text-[10px] uppercase tracking-wider font-semibold">Suggested Code</span>
+              <CopyButton text={code} />
+            </div>
+            <pre className="fix-block">
+              <code>{code}</code>
+            </pre>
+          </div>
+        )}
+        {footer && (
+          <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed whitespace-pre-wrap mt-2">
+            {footer}
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Fallback: no code block found
+  return (
+    <p className="text-[var(--color-text-secondary)] text-sm leading-relaxed whitespace-pre-wrap">
+      {fixSuggestion}
+    </p>
+  );
+}
+
 export default function FindingCard({ finding }) {
   const [open, setOpen] = useState(false);
 
@@ -136,16 +182,13 @@ export default function FindingCard({ finding }) {
           {/* Fix Suggestion */}
           {finding.fix_suggestion && (
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-[var(--color-severity-low)] text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                  <span>💡</span>
-                  Suggested Fix
-                </h4>
-                <CopyButton text={finding.fix_suggestion} />
+              <h4 className="text-[var(--color-severity-low)] text-xs font-semibold uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <span>💡</span>
+                Suggested Fix
+              </h4>
+              <div className="glass-card rounded-lg p-4">
+                {renderFixSuggestion(finding.fix_suggestion)}
               </div>
-              <pre className="fix-block">
-                <code>{finding.fix_suggestion}</code>
-              </pre>
             </div>
           )}
 
