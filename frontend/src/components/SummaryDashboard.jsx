@@ -64,6 +64,99 @@ function AnimatedCounter({ value, label, color }) {
   );
 }
 
+// Color map for scanner badges in the distribution bar
+const SCANNER_COLORS = {
+  semgrep: "#38bdf8",   // sky-400
+  bandit: "#a78bfa",    // violet-400
+  eslint: "#fbbf24",    // amber-400
+  secrets: "#f472b6",   // pink-400
+};
+
+function SeverityBar({ high, medium, low }) {
+  const total = high + medium + low;
+  if (total === 0) return null;
+
+  const segments = [
+    { count: high, color: "var(--color-severity-high)", label: "High", glow: "rgba(239,68,68,0.4)" },
+    { count: medium, color: "var(--color-severity-medium)", label: "Medium", glow: "rgba(249,115,22,0.35)" },
+    { count: low, color: "var(--color-severity-low)", label: "Low", glow: "rgba(16,185,129,0.35)" },
+  ].filter((s) => s.count > 0);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] mb-1">
+        <span className="uppercase tracking-wider font-semibold">Severity Distribution</span>
+        <span>{total} total</span>
+      </div>
+      <div className="flex h-3 rounded-full overflow-hidden bg-[var(--color-surface-700)]/40">
+        {segments.map((s) => (
+          <div
+            key={s.label}
+            style={{
+              width: `${(s.count / total) * 100}%`,
+              backgroundColor: s.color,
+              boxShadow: `0 0 8px ${s.glow}`,
+              transition: "width 0.6s cubic-bezier(0.16,1,0.3,1)",
+            }}
+          />
+        ))}
+      </div>
+      <div className="flex gap-4 mt-1.5">
+        {segments.map((s) => (
+          <div key={s.label} className="flex items-center gap-1.5 text-xs">
+            <span
+              className="w-2.5 h-2.5 rounded-full inline-block"
+              style={{ backgroundColor: s.color, boxShadow: `0 0 6px ${s.glow}` }}
+            />
+            <span className="text-[var(--color-text-secondary)]">
+              {s.label} <span className="text-[var(--color-text-muted)]">({s.count})</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ScannerBar({ byScanner }) {
+  const entries = Object.entries(byScanner).filter(([, count]) => count > 0);
+  const total = entries.reduce((sum, [, c]) => sum + c, 0);
+  if (total === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-xs text-[var(--color-text-muted)] mb-1">
+        <span className="uppercase tracking-wider font-semibold">Findings by Scanner</span>
+      </div>
+      <div className="flex h-3 rounded-full overflow-hidden bg-[var(--color-surface-700)]/40">
+        {entries.map(([scanner, count]) => (
+          <div
+            key={scanner}
+            style={{
+              width: `${(count / total) * 100}%`,
+              backgroundColor: SCANNER_COLORS[scanner] || "#94a3b8",
+              transition: "width 0.6s cubic-bezier(0.16,1,0.3,1)",
+            }}
+          />
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
+        {entries.map(([scanner, count]) => (
+          <div key={scanner} className="flex items-center gap-1.5 text-xs">
+            <span
+              className="w-2.5 h-2.5 rounded-full inline-block"
+              style={{ backgroundColor: SCANNER_COLORS[scanner] || "#94a3b8" }}
+            />
+            <span className="text-[var(--color-text-secondary)] capitalize">
+              {scanner} <span className="text-[var(--color-text-muted)]">({count})</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SummaryDashboard({ result }) {
   const { total_findings, summary, languages_detected, scanners_used } = result;
   const { by_severity, by_scanner, by_category } = summary;
@@ -73,6 +166,8 @@ export default function SummaryDashboard({ result }) {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 8);
   }, [by_category]);
+
+  const maxCategoryCount = topCategories.length > 0 ? topCategories[0][1] : 1;
 
   return (
     <div className="space-y-6">
@@ -93,6 +188,22 @@ export default function SummaryDashboard({ result }) {
             <AnimatedCounter value={by_severity.Low || 0} label="Low" color="var(--color-severity-low)" />
           </div>
         </div>
+
+        {/* Severity distribution bar */}
+        <div className="mt-6 pt-5 border-t border-[var(--color-surface-700)]">
+          <SeverityBar
+            high={by_severity.High || 0}
+            medium={by_severity.Medium || 0}
+            low={by_severity.Low || 0}
+          />
+        </div>
+
+        {/* Scanner distribution bar */}
+        {Object.keys(by_scanner).length > 0 && (
+          <div className="mt-5 pt-5 border-t border-[var(--color-surface-700)]">
+            <ScannerBar byScanner={by_scanner} />
+          </div>
+        )}
 
         {/* Meta info */}
         <div className="flex flex-wrap gap-4 mt-5 pt-5 border-t border-[var(--color-surface-700)]">
@@ -115,20 +226,33 @@ export default function SummaryDashboard({ result }) {
         </div>
       </div>
 
-      {/* Categories */}
+      {/* Categories with horizontal bar charts */}
       {topCategories.length > 0 && (
         <div className="glass-card rounded-2xl p-5">
-          <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-3 uppercase tracking-wider">
+          <h3 className="text-sm font-semibold text-[var(--color-text-secondary)] mb-4 uppercase tracking-wider">
             Top Vulnerability Categories
           </h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="space-y-3">
             {topCategories.map(([cat, count]) => (
-              <span key={cat} className="category-tag flex items-center gap-1.5">
-                {cat}
-                <span className="bg-[var(--color-surface-700)] text-[var(--color-text-muted)] rounded-full px-1.5 py-0.5 text-[0.65rem] leading-none">
-                  {count}
-                </span>
-              </span>
+              <div key={cat} className="group">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs text-[var(--color-text-secondary)] group-hover:text-[var(--color-neon-cyan)] transition-colors">
+                    {cat}
+                  </span>
+                  <span className="text-xs font-mono text-[var(--color-text-muted)]">{count}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-[var(--color-surface-700)]/40 overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${(count / maxCategoryCount) * 100}%`,
+                      background: "linear-gradient(90deg, var(--color-neon-cyan), var(--color-neon-purple))",
+                      transition: "width 0.6s cubic-bezier(0.16,1,0.3,1)",
+                      boxShadow: "0 0 8px rgba(0,240,255,0.25)",
+                    }}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>
