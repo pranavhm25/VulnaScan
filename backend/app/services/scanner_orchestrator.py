@@ -7,9 +7,10 @@ from app.services.repo_handler import detect_languages
 from app.services.semgrep_scanner import run_semgrep_scan
 from app.services.bandit_scanner import run_bandit_scan
 from app.services.eslint_scanner import run_eslint_scan
+from app.services.secrets_scanner import run_secrets_scan
 
 # Thread pool for running blocking scanner subprocesses
-_executor = ThreadPoolExecutor(max_workers=3)
+_executor = ThreadPoolExecutor(max_workers=4)
 
 
 async def run_all_scanners(repo_path: str, languages: List[str]) -> tuple[List[Finding], List[str]]:
@@ -24,6 +25,10 @@ async def run_all_scanners(repo_path: str, languages: List[str]) -> tuple[List[F
     # Semgrep always runs (supports many languages)
     tasks.append(loop.run_in_executor(_executor, run_semgrep_scan, repo_path))
     scanners_used.append("semgrep")
+
+    # Secrets scanner always runs to check all text files
+    tasks.append(loop.run_in_executor(_executor, run_secrets_scan, repo_path))
+    scanners_used.append("secrets")
 
     # Bandit for Python repos
     if "python" in languages:
