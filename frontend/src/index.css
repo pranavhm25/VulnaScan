@@ -310,3 +310,141 @@ body {
   white-space: pre-wrap;
   color: #a7f3d0;
 }
+
+/* ── Print Report Styles ── */
+@media print {
+  /* Set light background and dark text for print */
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: ui-sans-serif, system-ui, sans-serif !important;
+    font-size: 11pt !important;
+    line-height: 1.5 !important;
+  }
+
+  .bg-grid {
+    background-image: none !important;
+  }
+
+  /* Hide screen-only interactive elements */
+  header,
+  footer,
+  form,
+  .no-print,
+  button,
+  select,
+  input,
+  .expand-collapse-bar,
+  .copy-btn,
+  svg.absolute,
+  header p span {
+    display: none !important;
+  }
+
+  /* Reformat Glass Cards into clean printable blocks */
+  .glass-card {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 1.5rem !important;
+    padding: 1.25rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  .glass-card:hover {
+    border-color: #cbd5e1 !important;
+    box-shadow: none !important;
+  }
+
+  /* Text contrast enhancements */
+  .text-white, 
+  .text-\[var\(--color-text-primary\)\] {
+    color: #0f172a !important;
+  }
+
+  .text-\[var\(--color-text-secondary\)\] {
+    color: #334155 !important;
+  }
+
+  .text-\[var\(--color-text-muted\)\] {
+    color: #64748b !important;
+  }
+
+  /* Severity borders print rules */
+  .border-l-\[var\(--color-severity-high\)\] {
+    border-left: 6px solid #ef4444 !important;
+  }
+  .border-l-\[var\(--color-severity-medium\)\] {
+    border-left: 6px solid #f97316 !important;
+  }
+  .border-l-\[var\(--color-severity-low\)\] {
+    border-left: 6px solid #10b981 !important;
+  }
+
+  /* Badges */
+  .badge-high {
+    background: #fee2e2 !important;
+    color: #991b1b !important;
+    border: 1px solid #fca5a5 !important;
+    text-shadow: none !important;
+  }
+
+  .badge-medium {
+    background: #ffedd5 !important;
+    color: #c2410c !important;
+    border: 1px solid #fdba74 !important;
+    text-shadow: none !important;
+  }
+
+  .badge-low {
+    background: #d1fae5 !important;
+    color: #065f46 !important;
+    border: 1px solid #6ee7b7 !important;
+    text-shadow: none !important;
+  }
+
+  .badge-scanner {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .category-tag {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+
+  /* Code Blocks */
+  .code-block, 
+  .fix-block {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    font-size: 8.5pt !important;
+    page-break-inside: avoid !important;
+    white-space: pre-wrap !important;
+    word-break: break-all !important;
+  }
+
+  /* Force finding details to display, ignoring screen-only collapses */
+  .finding-details-container {
+    display: block !important;
+  }
+
+  /* Page break helpers */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid !important;
+  }
+
+  /* Custom Print Header */
+  .print-report-header {
+    display: block !important;
+    margin-bottom: 2rem !important;
+    border-bottom: 2px solid #0f172a !important;
+    padding-bottom: 1rem !important;
+  }
+}
+
