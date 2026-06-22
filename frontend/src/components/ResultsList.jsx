@@ -11,6 +11,7 @@ export default function ResultsList({ result }) {
   const [filterScanner, setFilterScanner] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [expandedFindings, setExpandedFindings] = useState({});
 
   // Get unique scanners
   const scanners = useMemo(
@@ -53,6 +54,54 @@ export default function ResultsList({ result }) {
     }));
   };
 
+  const toggleFinding = (id) => {
+    setExpandedFindings((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const expandAll = () => {
+    const next = {};
+    filtered.forEach((f) => {
+      next[f.id] = true;
+    });
+    setExpandedFindings(next);
+    setCollapsedGroups({});
+  };
+
+  const collapseAll = () => {
+    setExpandedFindings({});
+    const nextGroups = {};
+    SEVERITY_ORDER.forEach((sev) => {
+      nextGroups[sev] = true;
+    });
+    setCollapsedGroups(nextGroups);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportJson = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(result, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+
+    let repoName = "report";
+    try {
+      const urlParts = result.repo_url.split("/");
+      repoName = urlParts[urlParts.length - 1] || "report";
+    } catch {
+      // Fallback
+    }
+
+    downloadAnchor.setAttribute("download", `vulnascan-report-${repoName}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
   const severityIcon = { High: "🔴", Medium: "🟡", Low: "🟢" };
   const severityBadgeClass = { High: "badge-high", Medium: "badge-medium", Low: "badge-low" };
 
@@ -70,8 +119,21 @@ export default function ResultsList({ result }) {
 
   return (
     <div className="space-y-4">
-      {/* Filters */}
-      <div className="glass-card rounded-xl p-4">
+      {/* Print header (hidden on screen, visible on print) */}
+      <div className="hidden print:block print-report-header">
+        <div className="flex items-center justify-between border-b pb-4 mb-4 border-slate-300">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">VulnaScan Security Audit Report</h1>
+            <p className="text-sm text-slate-500 mt-1">Repository: {result.repo_url}</p>
+          </div>
+          <div className="text-right">
+            <span className="text-xs text-slate-400">Generated: {new Date().toLocaleDateString()}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters (hidden during print) */}
+      <div className="glass-card rounded-xl p-4 no-print">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
           <div className="relative flex-1">
@@ -128,8 +190,48 @@ export default function ResultsList({ result }) {
           )}
         </div>
 
-        <div className="mt-2 text-xs text-[var(--color-text-muted)]">
-          Showing {filtered.length} of {findings.length} findings
+        <div className="mt-2.5 flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+          <div>
+            Showing {filtered.length} of {findings.length} findings
+          </div>
+          {searchQuery && (
+            <span className="bg-[var(--color-neon-cyan)]/10 text-[var(--color-neon-cyan)] px-2 py-0.5 rounded-full border border-[var(--color-neon-cyan)]/20">
+              {filtered.length} matches
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Global Actions Bar (hidden during print) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 no-print pb-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={expandAll}
+            className="px-3 py-1.5 rounded-lg bg-[var(--color-surface-900)] text-[var(--color-text-secondary)] hover:text-[var(--color-neon-cyan)] hover:border-[var(--color-neon-cyan)]/30 text-xs border border-[var(--color-surface-700)] transition-all cursor-pointer flex items-center gap-1.5 font-medium"
+          >
+            <span>↔</span> Expand All
+          </button>
+          <button
+            onClick={collapseAll}
+            className="px-3 py-1.5 rounded-lg bg-[var(--color-surface-900)] text-[var(--color-text-secondary)] hover:text-[var(--color-neon-pink)] hover:border-[var(--color-neon-pink)]/30 text-xs border border-[var(--color-surface-700)] transition-all cursor-pointer flex items-center gap-1.5 font-medium"
+          >
+            <span>⇆</span> Collapse All
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handlePrint}
+            className="px-3 py-1.5 rounded-lg bg-[var(--color-surface-900)] text-[var(--color-text-secondary)] hover:text-[var(--color-neon-cyan)] hover:border-[var(--color-neon-cyan)]/30 text-xs border border-[var(--color-surface-700)] transition-all cursor-pointer flex items-center gap-1.5 font-medium"
+          >
+            <span>📄</span> Export PDF Report
+          </button>
+          <button
+            onClick={handleExportJson}
+            className="px-3 py-1.5 rounded-lg bg-[var(--color-surface-900)] text-[var(--color-text-secondary)] hover:text-[var(--color-neon-green)] hover:border-[var(--color-neon-green)]/30 text-xs border border-[var(--color-surface-700)] transition-all cursor-pointer flex items-center gap-1.5 font-medium"
+          >
+            <span>⬇️</span> Download JSON
+          </button>
         </div>
       </div>
 
@@ -138,7 +240,7 @@ export default function ResultsList({ result }) {
         <div key={severity} className="space-y-2">
           <button
             onClick={() => toggleGroup(severity)}
-            className="flex items-center gap-2 w-full text-left py-2 cursor-pointer group"
+            className="flex items-center gap-2 w-full text-left py-2 cursor-pointer group no-print"
           >
             <span className="text-sm">{severityIcon[severity]}</span>
             <span className={`text-sm font-bold px-2.5 py-1 rounded-lg ${severityBadgeClass[severity]}`}>
@@ -152,6 +254,13 @@ export default function ResultsList({ result }) {
             </span>
           </button>
 
+          {/* Simple header for print report instead of buttons */}
+          <div className="hidden print:block border-b border-slate-200 pb-1 mt-6 mb-3">
+            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+              {severityIcon[severity]} {severity} Severity Findings ({items.length})
+            </h2>
+          </div>
+
           {!collapsedGroups[severity] && (
             <div className="space-y-2 pl-1">
               {items.map((f, idx) => (
@@ -160,7 +269,11 @@ export default function ResultsList({ result }) {
                   className="animate-fade-in"
                   style={{ animationDelay: `${idx * 50}ms` }}
                 >
-                  <FindingCard finding={f} />
+                  <FindingCard
+                    finding={f}
+                    open={!!expandedFindings[f.id]}
+                    onToggle={() => toggleFinding(f.id)}
+                  />
                 </div>
               ))}
             </div>
