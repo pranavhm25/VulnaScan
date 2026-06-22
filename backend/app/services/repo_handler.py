@@ -25,9 +25,10 @@ def validate_github_url(url: str) -> None:
         )
 
 
-def clone_repo(repo_url: str) -> str:
+def clone_repo(repo_url: str, branch: str = None, pr_number: int = None) -> str:
     """
     Shallow-clone a public GitHub repo into a unique temp directory.
+    Optionally checks out a specific branch or pull request head ref.
     Returns the path to the cloned repo.
     Raises RepoTooLargeError if the repo exceeds the configured size limit.
     Raises InvalidRepoURLError if the URL doesn't match GitHub format.
@@ -38,14 +39,31 @@ def clone_repo(repo_url: str) -> str:
     os.makedirs(target_dir, exist_ok=True)
 
     try:
-        # Shallow clone to avoid pulling full history
-        git.Repo.clone_from(
-            repo_url,
-            target_dir,
-            depth=1,
-            single_branch=True,
-            env={"GIT_TERMINAL_PROMPT": "0"},  # prevent interactive prompts
-        )
+        clone_kwargs = {
+            "depth": 1,
+            "env": {"GIT_TERMINAL_PROMPT": "0"},
+        }
+
+        if pr_number:
+            # Clone default branch first, then fetch the PR head ref
+            clone_kwargs["single_branch"] = True
+            repo = git.Repo.clone_from(repo_url, target_dir, **clone_kwargs)
+
+            # Fetch the PR head ref
+            repo.git.fetch("origin", f"pull/{pr_number}/head:pr-{pr_number}", depth=50)
+            repo.git.checkout(f"pr-{pr_number}")
+
+        elif branch:
+            # Clone the specific branch directly
+            clone_kwargs["branch"] = branch
+            clone_kwargs["single_branch"] = True
+            git.Repo.clone_from(repo_url, target_dir, **clone_kwargs)
+
+        else:
+            # Clone default branch
+            clone_kwargs["single_branch"] = True
+            git.Repo.clone_from(repo_url, target_dir, **clone_kwargs)
+
     except git.GitCommandError as e:
         cleanup_repo(target_dir)
         raise RuntimeError(f"Git clone failed: {e.stderr.strip()}")

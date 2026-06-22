@@ -1,9 +1,12 @@
 from pydantic import BaseModel, HttpUrl
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Literal
 
 
 class ScanRequest(BaseModel):
     repo_url: HttpUrl
+    branch: Optional[str] = None          # e.g. "develop", "feature/auth"
+    pr_number: Optional[int] = None       # e.g. 42
+    scan_diff_only: bool = False           # if True, only report findings on changed lines
 
 
 class Finding(BaseModel):
@@ -20,6 +23,8 @@ class Finding(BaseModel):
     cwe_id: Optional[str] = None
     explanation: Optional[str] = None
     fix_suggestion: Optional[str] = None
+    triage_status: Optional[Literal["True Positive", "False Positive", "Needs Review"]] = None
+    triage_reason: Optional[str] = None
 
 
 class ScanSummary(BaseModel):
@@ -33,6 +38,9 @@ class ScanResponse(BaseModel):
     total_findings: int
     languages_detected: List[str] = []
     scanners_used: List[str] = []
+    branch: Optional[str] = None
+    pr_number: Optional[int] = None
+    scan_diff_only: bool = False
     findings: List[Finding]
     summary: ScanSummary
 
