@@ -2,12 +2,19 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 /**
  * Start a new scan. Returns { scan_id, status }.
+ * @param {string} repoUrl
+ * @param {object} options - { branch, pr_number, scan_diff_only }
  */
-export async function startScan(repoUrl) {
+export async function startScan(repoUrl, options = {}) {
+  const body = { repo_url: repoUrl };
+  if (options.branch) body.branch = options.branch;
+  if (options.pr_number) body.pr_number = Number(options.pr_number);
+  if (options.scan_diff_only) body.scan_diff_only = true;
+
   const res = await fetch(`${API_BASE}/api/scan`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ repo_url: repoUrl }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
@@ -60,4 +67,24 @@ export async function pollScanResults(scanId, onProgress, signal) {
 
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL));
   }
+}
+
+/**
+ * Retry AI explanation for a single finding.
+ * @param {object} finding - the Finding object to re-explain
+ * @returns {Promise<object>} - the updated Finding with explanation
+ */
+export async function retryExplanation(finding) {
+  const res = await fetch(`${API_BASE}/api/findings/explain`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(finding),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || `Retry failed (${res.status})`);
+  }
+
+  return res.json();
 }

@@ -119,6 +119,67 @@ export default function ResultsList({ result }) {
 
   return (
     <div className="space-y-4">
+      {/* Print cover page (hidden on screen, visible on print) */}
+      <div className="hidden print:flex flex-col justify-between p-12 rounded-2xl mb-12 print-cover-page">
+        <div className="space-y-8 my-auto">
+          <div className="flex items-center gap-3">
+            <span className="text-5xl">🛡️</span>
+            <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight">VulnaScan Audit Report</h1>
+          </div>
+          <div className="border-t border-slate-300 my-6"></div>
+          <div>
+            <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Repository</h2>
+            <p className="text-xl font-mono text-slate-700 mt-1 break-all">{result.repo_url}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            {result.branch && (
+              <div>
+                <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Branch</h2>
+                <p className="text-md text-slate-600 font-mono mt-1">{result.branch}</p>
+              </div>
+            )}
+            {result.pr_number && (
+              <div>
+                <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">PR Number</h2>
+                <p className="text-md text-slate-600 font-mono mt-1">#{result.pr_number}</p>
+              </div>
+            )}
+            {result.scan_diff_only && (
+              <div className="col-span-2 mt-2">
+                <span className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200 font-medium">
+                  Diff Scan Only (Modified code checked)
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 pt-8 border-t border-slate-200 mt-8">
+            <div>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Findings</h3>
+              <p className="text-3xl font-bold text-slate-800 mt-1">{findings.length}</p>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Scanners</h3>
+              <p className="text-sm text-slate-600 mt-1 capitalize">{result.scanners_used?.join(", ")}</p>
+            </div>
+            <div>
+              <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Severity Breakdown</h3>
+              <p className="text-xs text-slate-600 mt-1">
+                🔴 High: {result.summary?.by_severity?.High || 0}<br />
+                🟡 Medium: {result.summary?.by_severity?.Medium || 0}<br />
+                🟢 Low: {result.summary?.by_severity?.Low || 0}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-slate-200 pt-6 mt-12 flex justify-between text-xs text-slate-400">
+          <span>Generated: {new Date().toLocaleDateString()}</span>
+          <span>VulnaScan Security Assessment</span>
+        </div>
+      </div>
+
       {/* Print header (hidden on screen, visible on print) */}
       <div className="hidden print:block print-report-header">
         <div className="flex items-center justify-between border-b pb-4 mb-4 border-slate-300">
@@ -273,6 +334,14 @@ export default function ResultsList({ result }) {
                     finding={f}
                     open={!!expandedFindings[f.id]}
                     onToggle={() => toggleFinding(f.id)}
+                    onFindingUpdate={(updated) => {
+                      // Dynamically update the finding object in the result state
+                      // so JSON downloads capture updated AI explanations
+                      f.explanation = updated.explanation;
+                      f.fix_suggestion = updated.fix_suggestion;
+                      f.triage_status = updated.triage_status;
+                      f.triage_reason = updated.triage_reason;
+                    }}
                   />
                 </div>
               ))}

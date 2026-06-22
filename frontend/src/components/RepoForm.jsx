@@ -3,6 +3,10 @@ import { useState } from "react";
 export default function RepoForm({ onScan, loading, onCancel }) {
   const [url, setUrl] = useState("");
   const [valid, setValid] = useState(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [branch, setBranch] = useState("");
+  const [prNumber, setPrNumber] = useState("");
+  const [scanDiffOnly, setScanDiffOnly] = useState(false);
 
   const validateUrl = (value) => {
     setUrl(value);
@@ -16,8 +20,18 @@ export default function RepoForm({ onScan, loading, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (url.trim() && valid) onScan(url.trim());
+    if (url.trim() && valid) {
+      const options = {};
+      if (branch.trim()) options.branch = branch.trim();
+      if (prNumber.trim()) options.pr_number = prNumber.trim();
+      if (scanDiffOnly && (branch.trim() || prNumber.trim())) {
+        options.scan_diff_only = true;
+      }
+      onScan(url.trim(), options);
+    }
   };
+
+  const hasAdvancedInput = branch.trim() || prNumber.trim();
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-2xl">
@@ -79,6 +93,81 @@ export default function RepoForm({ onScan, loading, onCancel }) {
             </button>
           )}
         </div>
+      </div>
+
+      {/* Advanced Options Toggle */}
+      <div className="mt-3 ml-1">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-neon-cyan)] transition-colors cursor-pointer flex items-center gap-1.5"
+        >
+          <span className="transition-transform" style={{ transform: showAdvanced ? "rotate(90deg)" : "none" }}>▶</span>
+          Advanced Options
+          {hasAdvancedInput && (
+            <span className="bg-[var(--color-neon-cyan)]/15 text-[var(--color-neon-cyan)] text-[0.6rem] px-1.5 py-0.5 rounded-full">
+              active
+            </span>
+          )}
+        </button>
+
+        {showAdvanced && (
+          <div className="mt-3 glass-card rounded-xl p-4 space-y-3 animate-fade-in">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Branch */}
+              <div>
+                <label htmlFor="branch-input" className="block text-xs text-[var(--color-text-muted)] mb-1.5 uppercase tracking-wider font-medium">
+                  Branch Name
+                </label>
+                <input
+                  id="branch-input"
+                  type="text"
+                  value={branch}
+                  onChange={(e) => { setBranch(e.target.value); if (e.target.value) setPrNumber(""); }}
+                  placeholder="e.g. develop, feature/auth"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-900)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] text-sm border border-[var(--color-surface-700)] focus:border-[var(--color-neon-cyan)]/20 focus:outline-none font-mono"
+                  disabled={loading || prNumber.trim() !== ""}
+                />
+              </div>
+
+              {/* PR Number */}
+              <div>
+                <label htmlFor="pr-input" className="block text-xs text-[var(--color-text-muted)] mb-1.5 uppercase tracking-wider font-medium">
+                  PR Number
+                </label>
+                <input
+                  id="pr-input"
+                  type="number"
+                  value={prNumber}
+                  onChange={(e) => { setPrNumber(e.target.value); if (e.target.value) setBranch(""); }}
+                  placeholder="e.g. 42"
+                  min="1"
+                  className="w-full px-3 py-2 rounded-lg bg-[var(--color-surface-900)] text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] text-sm border border-[var(--color-surface-700)] focus:border-[var(--color-neon-cyan)]/20 focus:outline-none font-mono"
+                  disabled={loading || branch.trim() !== ""}
+                />
+              </div>
+            </div>
+
+            {/* Scan Diff Only */}
+            {hasAdvancedInput && (
+              <label className="flex items-center gap-2.5 cursor-pointer group" htmlFor="diff-checkbox">
+                <input
+                  id="diff-checkbox"
+                  type="checkbox"
+                  checked={scanDiffOnly}
+                  onChange={(e) => setScanDiffOnly(e.target.checked)}
+                  className="w-4 h-4 rounded accent-[var(--color-neon-cyan)] cursor-pointer"
+                />
+                <span className="text-sm text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)] transition-colors">
+                  Scan diff only
+                  <span className="text-xs text-[var(--color-text-muted)] ml-1.5">
+                    — only report findings on changed lines
+                  </span>
+                </span>
+              </label>
+            )}
+          </div>
+        )}
       </div>
 
       {url && !valid && valid !== null && (

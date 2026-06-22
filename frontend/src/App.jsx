@@ -12,7 +12,7 @@ export default function App() {
   const [scanStatus, setScanStatus] = useState(null);
   const abortRef = useRef(null);
 
-  const handleScan = async (repoUrl) => {
+  const handleScan = async (repoUrl, options = {}) => {
     setLoading(true);
     setError(null);
     setResult(null);
@@ -22,7 +22,7 @@ export default function App() {
     abortRef.current = new AbortController();
 
     try {
-      const { scan_id } = await startScan(repoUrl);
+      const { scan_id } = await startScan(repoUrl, options);
 
       const data = await pollScanResults(
         scan_id,

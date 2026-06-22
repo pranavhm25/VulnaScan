@@ -446,5 +446,14 @@ body {
     border-bottom: 2px solid #0f172a !important;
     padding-bottom: 1rem !important;
   }
+
+  /* Cover Page */
+  .print-cover-page {
+    page-break-after: always !important;
+    break-after: page !important;
+    display: flex !important;
+    min-height: 95vh !important;
+    border: 2px solid #cbd5e1 !important;
+  }
 }
 
