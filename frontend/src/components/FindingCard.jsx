@@ -95,8 +95,18 @@ function renderFixSuggestion(fixSuggestion) {
   );
 }
 
-export default function FindingCard({ finding }) {
-  const [open, setOpen] = useState(false);
+export default function FindingCard({ finding, open: controlledOpen, onToggle }) {
+  const [localOpen, setLocalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : localOpen;
+
+  const handleToggle = () => {
+    if (isControlled) {
+      onToggle();
+    } else {
+      setLocalOpen(!localOpen);
+    }
+  };
 
   return (
     <div
@@ -104,7 +114,7 @@ export default function FindingCard({ finding }) {
     >
       {/* Header — always visible */}
       <button
-        onClick={() => setOpen(!open)}
+        onClick={handleToggle}
         className="w-full flex items-center justify-between px-4 py-3.5 text-left cursor-pointer group"
       >
         <div className="flex items-center gap-3 min-w-0">
@@ -130,8 +140,7 @@ export default function FindingCard({ finding }) {
       </button>
 
       {/* Expandable details */}
-      {open && (
-        <div className="px-4 pb-4 space-y-4 animate-fade-in">
+      <div className={`px-4 pb-4 space-y-4 animate-fade-in finding-details-container ${open ? "block" : "hidden"}`}>
           {/* Rule info */}
           <div className="flex flex-wrap gap-2 items-center text-xs">
             <span className="text-[var(--color-text-muted)]">Rule:</span>
@@ -199,7 +208,6 @@ export default function FindingCard({ finding }) {
             </div>
           )}
         </div>
-      )}
     </div>
   );
 }
